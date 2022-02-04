@@ -7,6 +7,7 @@ import requests
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QApplication, QMainWindow
+
 # Широта Долгота
 # 51,533562 46,034266 Саратов, Театральная пл-дь
 # 55,753630 37,620070 Москва, Красная пл-дь
@@ -17,17 +18,32 @@ class Example(QMainWindow):
     def __init__(self):
         super().__init__()
         uic.loadUi("main.ui", self)
-        self.pushButton.clicked.connect(self.getImage)
+        self.pushButton.clicked.connect(self.changelonlat)
         self.map_file = False
         self.zoom = 10
 
     def keyPressEvent(self, event):
         get_map = False
-        if event.key() == Qt.Key_Down:
+        # if event.key() == Qt.Key_Down:
+        #     self.lat -= 0.2
+        #     get_map = True
+        #
+        # if event.key() == Qt.Key_Up:
+        #     self.lat += 0.2
+        #     get_map = True
+        # if event.key() == Qt.Key_Right:
+        #     self.lon += 0.2
+        #     get_map = True
+        #
+        # if event.key() == Qt.Key_Left:
+        #     self.lon -= 0.2
+        #     get_map = True
+
+        if event.key() == Qt.Key_PageUp:
             if self.zoom > 1:
                 self.zoom -= 1
                 get_map = True
-        if event.key() == Qt.Key_Up:
+        if event.key() == Qt.Key_PageDown:
             if self.zoom < 17:
                 self.zoom += 1
                 get_map = True
@@ -35,14 +51,17 @@ class Example(QMainWindow):
             self.getImage()
             print(self.zoom)
 
+    def changelonlat(self):
+        self.lon = self.doubleSpinBox.value()
+        self.lat = self.doubleSpinBox_2.value()
+
+        self.getImage()
+
     def getImage(self):
         api_server = "http://static-maps.yandex.ru/1.x/"
-        lon = str(self.doubleSpinBox.value())
-        lat = str(self.doubleSpinBox_2.value())
-        print(lon, lat)
         delta = "0.002"
         params = {
-            "ll": ",".join([lon, lat]),
+            "ll": ",".join([str(self.lon), str(self.lat)]),
             # "spn": ",".join([delta, delta]),
             "z": str(self.zoom),
             "l": "map"
