@@ -1,11 +1,15 @@
 import os
 import sys
+import traceback
+
 from PyQt5 import uic
 import requests
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QApplication, QMainWindow
-
+# Широта Долгота
+# 51,533562 46,034266 Саратов, Театральная пл-дь
+# 55,753630 37,620070 Москва, Красная пл-дь
 SCREEN_SIZE = [600, 450]
 
 
@@ -14,27 +18,36 @@ class Example(QMainWindow):
         super().__init__()
         uic.loadUi("main.ui", self)
         self.pushButton.clicked.connect(self.getImage)
-        self.delta = "0.002"
+        self.map_file = False
+        self.zoom = 10
 
-    # def keyPressEvent(self, event):
-    #     if event.key() == Qt.Key_Down:
-    #         self.delta = str(float(self.delta) - 0.01)
-    #     if event.key() == Qt.Key_Up:
-    #         self.delta = str(float(self.delta) + 0.01)
-    #     print("Масштабирую")
+    def keyPressEvent(self, event):
+        get_map = False
+        if event.key() == Qt.Key_Down:
+            if self.zoom > 1:
+                self.zoom -= 1
+                get_map = True
+        if event.key() == Qt.Key_Up:
+            if self.zoom < 17:
+                self.zoom += 1
+                get_map = True
+        if self.map_file and get_map:
+            self.getImage()
+            print(self.zoom)
 
     def getImage(self):
         api_server = "http://static-maps.yandex.ru/1.x/"
         lon = str(self.doubleSpinBox.value())
         lat = str(self.doubleSpinBox_2.value())
         print(lon, lat)
-
-
+        delta = "0.002"
         params = {
             "ll": ",".join([lon, lat]),
-            "spn": ",".join([self.delta, self.delta]),
+            # "spn": ",".join([delta, delta]),
+            "z": str(self.zoom),
             "l": "map"
         }
+        print(api_server + "?" + "&".join([f"{x}={params[x]}" for x in params.keys()]))
         response = requests.get(api_server, params=params)
 
         if not response:
@@ -50,6 +63,7 @@ class Example(QMainWindow):
         self.reload_map()
 
     def reload_map(self):
+        print("Отрисовка карты")
         # self.setGeometry(100, 100, *SCREEN_SIZE)
         self.setWindowTitle('Отображение карты')
 
@@ -63,6 +77,14 @@ class Example(QMainWindow):
     def closeEvent(self, event):
         """При закрытии формы подчищаем за собой"""
         os.remove(self.map_file)
+
+    def excepthook(exc_type, exc_value, exc_tb):
+        tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
+        print("Oбнаружена ошибка !:", tb)
+
+        #    QtWidgets.QApplication.quit()             # !!! если вы хотите, чтобы событие завершилось
+
+    sys.excepthook = excepthook
 
 
 if __name__ == '__main__':
